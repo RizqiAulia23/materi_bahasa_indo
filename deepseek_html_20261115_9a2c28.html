@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Bahasa Indonesia XI — Auto Korek</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:linear-gradient(135deg,#0f172a 0%,#4f46e5 50%,#7c3aed 100%);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:16px;color:#1e293b;
+  }
+  .app{width:100%;max-width:860px;background:#fff;border-radius:20px;
+    box-shadow:0 25px 50px -12px rgba(0,0,0,.5);overflow:hidden}
+  .hidden{display:none!important}
+
+  /* START */
+  #startScreen{padding:48px 32px;text-align:center}
+  #startScreen h1{font-size:26px;color:#312e81;margin-bottom:8px}
+  #startScreen .sub{color:#64748b;margin-bottom:26px}
+  .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:26px}
+  .info-card{background:#f1f5f9;border-radius:14px;padding:16px 10px}
+  .info-card b{display:block;font-size:22px;color:#4f46e5}
+  .info-card span{font-size:13px;color:#64748b}
+  .btn{border:none;cursor:pointer;font-weight:600;border-radius:12px;
+    padding:14px 26px;font-size:15px;transition:.18s;font-family:inherit}
+  .btn-primary{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 20px -5px rgba(79,70,229,.5)}
+  .btn-ghost{background:#e2e8f0;color:#334155}
+  .btn-ghost:hover{background:#cbd5e1}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+  .toggle{display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;
+    font-size:14px;color:#475569;cursor:pointer;user-select:none}
+  .toggle input{width:18px;height:18px;accent-color:#4f46e5;cursor:pointer}
+
+  /* HEADER */
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+    gap:12px;padding:14px 22px;background:#312e81;color:#fff;flex-wrap:wrap}
+  .topbar .title{font-weight:700;font-size:14px}
+  .live-score{background:rgba(255,255,255,.15);padding:6px 14px;border-radius:10px;
+    font-weight:700;font-size:14px;display:flex;gap:10px;align-items:center}
+  .live-score .pill{padding:2px 8px;border-radius:6px;font-size:12px}
+  .pill.ok{background:#22c55e}
+  .pill.no{background:#ef4444}
+  .progress-wrap{height:6px;background:#e2e8f0}
+  .progress-bar{height:100%;width:0;background:linear-gradient(90deg,#4f46e5,#7c3aed);transition:width .3s}
+
+  /* QUIZ */
+  .q-area{padding:26px 28px}
+  .badge{display:inline-block;background:#eef2ff;color:#4f46e5;font-size:11px;
+    font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+    padding:5px 12px;border-radius:20px;margin-bottom:12px}
+  .q-num{font-size:13px;color:#94a3b8;font-weight:600;margin-bottom:6px}
+  .q-text{font-size:17px;line-height:1.6;font-weight:600;color:#1e293b;margin-bottom:18px}
+  .opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;
+    background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;
+    padding:13px 16px;margin-bottom:10px;cursor:pointer;font-family:inherit;
+    font-size:15px;line-height:1.5;color:#334155;transition:.15s;position:relative}
+  .opt:hover:not(:disabled){background:#eef2ff;border-color:#c7d2fe}
+  .opt:disabled{cursor:default}
+  .opt .letter{flex:0 0 26px;height:26px;border-radius:50%;background:#e2e8f0;
+    color:#475569;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:13px}
+  /* status auto korek */
+  .opt.correct{background:#dcfce7;border-color:#22c55e;color:#15803d;font-weight:600}
+  .opt.correct .letter{background:#22c55e;color:#fff}
+  .opt.wrong{background:#fee2e2;border-color:#ef4444;color:#b91c1c;font-weight:600}
+  .opt.wrong .letter{background:#ef4444;color:#fff}
+  .opt.reveal{background:#f0fdf4;border-color:#86efac;color:#15803d}
+  .opt.reveal .letter{background:#86efac;color:#fff}
+  .opt .mark{position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    font-size:18px;font-weight:800}
+  .opt.correct .mark{color:#16a34a}
+  .opt.wrong .mark{color:#dc2626}
+
+  .feedback{margin-top:14px;padding:14px 16px;border-radius:12px;font-size:14px;
+    line-height:1.6;display:flex;gap:10px;align-items:flex-start;animation:fade .25s}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .feedback.ok{background:#f0fdf4;border-left:4px solid #22c55e;color:#166534}
+  .feedback.no{background:#fef2f2;border-left:4px solid #ef4444;color:#991b1b}
+  .feedback .icon{font-size:18px;line-height:1}
+  .feedback b{display:block;margin-bottom:2px}
+
+  .next-wrap{display:flex;justify-content:flex-end;margin-top:18px;gap:10px}
+
+  /* FOOTER */
+  .footer{display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:14px 22px;border-top:1px solid #e2e8f0;background:#f8fafc;flex-wrap:wrap}
+  .footer .hint{font-size:12px;color:#94a3b8}
+
+  /* RESULT */
+  #resultScreen{padding:36px 28px;max-height:90vh;overflow-y:auto}
+  .score-ring{width:150px;height:150px;border-radius:50%;margin:0 auto 18px;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+  .score-inner{width:120px;height:120px;border-radius:50%;background:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .score-inner b{font-size:34px;line-height:1}
+  .score-inner span{font-size:12px;color:#94a3b8;margin-top:4px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0}
+  .stat{border-radius:14px;padding:16px;text-align:center}
+  .stat b{display:block;font-size:24px}
+  .stat span{font-size:13px}
+  .stat.ok{background:#dcfce7;color:#15803d}
+  .stat.no{background:#fee2e2;color:#b91c1c}
+  .stat.skip{background:#f1f5f9;color:#64748b}
+  .review-title{font-size:17px;font-weight:700;color:#312e81;margin:22px 0 12px;
+    padding-top:18px;border-top:2px dashed #e2e8f0}
+  .rev-item{background:#f8fafc;border-left:4px solid #cbd5e1;border-radius:10px;
+    padding:12px 15px;margin-bottom:10px;font-size:14px;line-height:1.55}
+  .rev-item.correct{border-left-color:#22c55e;background:#f0fdf4}
+  .rev-item.wrong{border-left-color:#ef4444;background:#fef2f2}
+  .rev-item .q{font-weight:600;color:#1e293b;margin-bottom:6px}
+  .rev-item .ans{color:#475569}
+  .rev-item .ans b{color:#15803d}
+  .rev-item .ans .bad{color:#b91c1c}
+  .rev-item .src{font-size:12px;color:#94a3b8;margin-top:5px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- START -->
+  <section id="startScreen">
+    <h1>Quiz Bahasa Indonesia — Blok 3</h1>
+    <p class="sub">Kelas XI · 40 Soal · Mode Auto Korek</p>
+    <div class="info-grid">
+      <div class="info-card"><b>40</b><span>Soal</span></div>
+      <div class="info-card"><b>A–D</b><span>Pilihan</span></div>
+      <div class="info-card"><b>100</b><span>Poin</span></div>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="shuffleToggle"> Acak urutan soal
+    </label>
+    <br>
+    <button class="btn btn-primary" id="startBtn">Mulai Quiz →</button>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quizScreen" class="hidden">
+    <div class="topbar">
+      <div class="title">Bahasa Indonesia XI — Blok 3</div>
+      <div class="live-score">
+        <span class="pill ok" id="liveBenar">✓ 0</span>
+        <span class="pill no" id="liveSalah">✗ 0</span>
+      </div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+    <div class="q-area" id="qArea"></div>
+
+    <div class="footer">
+      <div class="hint">Klik jawaban → otomatis dinilai</div>
+      <button class="btn btn-primary" id="finishBtn">Akhiri & Lihat Hasil</button>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="resultScreen" class="hidden"></section>
+
+</div>
+
+<script>
+/* ================= DATA SOAL ================= */
+const QUESTIONS = [
+ {m:`Teks Argumentasi`, q:`Tujuan utama teks argumentasi adalah …`,
+  o:[`menghibur pembaca`,`meyakinkan pembaca dengan alasan dan bukti`,`menceritakan pengalaman pribadi`,`menggambarkan objek secara rinci`], a:1},
+ {m:`Teks Argumentasi`, q:`Kalimat “Pemerintah menaikkan harga BBM pada 1 Oktober 2023” merupakan …`,
+  o:[`opini karena berisi penilaian`,`fakta karena dapat diverifikasi`,`opini karena tidak ada sumber`,`fakta karena bersifat menghibur`], a:1},
+ {m:`Teks Argumentasi`, q:`Struktur pernyataan pendapat atau tesis dalam teks argumentasi umumnya terletak pada …`,
+  o:[`bagian awal`,`bagian tengah`,`bagian akhir`,`seluruh paragraf`], a:0},
+ {m:`Teks Argumentasi`, q:`Kalimat “Menurut saya, sekolah sebaiknya menerapkan lima hari kerja karena lebih efisien” merupakan opini karena …`,
+  o:[`didukung data resmi`,`berisi pendapat atau penilaian penulis`,`memuat angka dan tanggal`,`berasal dari sumber terpercaya`], a:1},
+ {m:`Teks Argumentasi`, q:`Fungsi data dan fakta dalam teks argumentasi adalah …`,
+  o:[`memperkuat argumen`,`memperpanjang teks`,`menghibur pembaca`,`menggantikan tesis`], a:0},
+ {m:`Teks Argumentasi`, q:`“Sampah plastik sulit terurai. ___, limbah ini mencemari laut.” Konjungsi antarkalimat yang tepat adalah …`,
+  o:[`Akibatnya`,`Sebaliknya`,`Meskipun demikian`,`Sementara itu`], a:0},
+ {m:`Teks Argumentasi`, q:`“Biaya pendidikan tinggi. ___, banyak siswa mencari beasiswa.” Konjungsi yang tepat adalah …`,
+  o:[`Oleh karena itu`,`Namun`,`Selain itu`,`Dengan demikian`], a:0},
+ {m:`Teks Argumentasi`, q:`Paragraf yang menjelaskan penyebab suatu peristiwa lalu diikuti akibatnya menggunakan pola pengembangan …`,
+  o:[`sebab-akibat`,`perbandingan`,`contoh`,`definisi`], a:0},
+ {m:`Teks Argumentasi`, q:`Fungsi bagian penutup teks argumentasi adalah …`,
+  o:[`memperkenalkan topik`,`menyajikan data baru`,`menegaskan kembali pendapat dan memberi rekomendasi`,`menghibur pembaca`], a:2},
+ {m:`Teks Argumentasi`, q:`Perbedaan teks argumentasi dan persuasi adalah …`,
+  o:[`argumentasi hanya menghibur`,`persuasi tidak boleh memakai data`,`argumentasi tidak membutuhkan fakta`,`argumentasi menekankan logika dan bukti, persuasi menekankan bujukan`], a:3},
+ {m:`Poster dan Teks Persuasi`, q:`Ciri poster promosi yang efektif adalah …`,
+  o:[`kalimat panjang dan bertele-tele`,`visual menarik dan pesan singkat`,`tanpa gambar dan warna`,`bahasa ambigu`], a:1},
+ {m:`Poster dan Teks Persuasi`, q:`Poster “Ayo hemat air! Matikan keran saat tidak digunakan” termasuk jenis poster …`,
+  o:[`komersial`,`layanan masyarakat`,`lowongan kerja`,`pendidikan formal`], a:1},
+ {m:`Teks Argumentasi`, q:`“Sampah organik seperti sisa sayur dan daun dapat diolah menjadi kompos. Kompos bermanfaat menyuburkan tanah. Selain itu, pengolahan sampah organik mengurangi tumpukan sampah di TPA.” Kalimat utama paragraf tersebut adalah …`,
+  o:[`Sampah organik dapat diolah menjadi kompos.`,`Kompos bermanfaat menyuburkan tanah.`,`Pengolahan sampah mengurangi tumpukan sampah.`,`Sisa sayur dan daun adalah sampah organik.`], a:0},
+ {m:`Poster dan Teks Persuasi`, q:`Ciri poster berdasarkan unsur visual dan kebahasaan adalah …`,
+  o:[`slogan singkat, huruf besar, dan kontras`,`paragraf panjang`,`bahasa arkais`,`tanpa ajakan`], a:0},
+ {m:`Poster dan Teks Persuasi`, q:`Media atau momen yang tepat untuk persuasi politik adalah …`,
+  o:[`kampanye pemilu`,`resep masakan`,`iklan sabun`,`pengumuman kelas`], a:0},
+ {m:`Teks Berita`, q:`Karakteristik berita yang baik adalah …`,
+  o:[`subjektif dan opini`,`faktual, aktual, dan berimbang`,`berdasarkan rumor`,`tanpa sumber jelas`], a:1},
+ {m:`Teks Berita`, q:`Kepanjangan unsur ADIKSIMBA adalah …`,
+  o:[`Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana`,`Apa, Dunia, Kapan, Siapa, Mengapa, Berapa`,`Apa, Di mana, Kapan, Siapa, Mengapa, Berapa`,`Apa, Dunia, Kapan, Siapa, Mengapa, Bagaimana`], a:0},
+ {m:`Teks Berita`, q:`Bagian berita yang memuat inti informasi di awal disebut …`,
+  o:[`judul`,`lead atau teras berita`,`tubuh berita`,`ekor berita`], a:1},
+ {m:`Teks Berita`, q:`“Peristiwa itu terjadi pada Senin, 10 November 2025.” Informasi tersebut menunjukkan unsur …`,
+  o:[`siapa`,`kapan`,`di mana`,`mengapa`], a:1},
+ {m:`Teks Berita`, q:`Struktur berita yang menguraikan informasi secara terperinci setelah lead disebut …`,
+  o:[`headline`,`lead`,`tubuh berita`,`tail`], a:2},
+ {m:`Teks Berita`, q:`Fungsi unsur “mengapa” dalam berita adalah …`,
+  o:[`menjelaskan penyebab peristiwa`,`menyebutkan tempat`,`menyebutkan waktu`,`menyebutkan nama tokoh`], a:0},
+ {m:`Teks Berita`, q:`Pentingnya verifikasi sumber berita adalah …`,
+  o:[`agar berita lebih panjang`,`agar opini penulis kuat`,`agar berita tidak memiliki tanggal`,`agar informasi valid dan terhindar dari hoaks`], a:3},
+ {m:`Teks Berita`, q:`Syarat berita agar terhindar dari hoaks adalah …`,
+  o:[`judul provokatif`,`sumber jelas dan fakta terverifikasi`,`tanpa tanggal`,`berisi opini penulis`], a:1},
+ {m:`Teks Berita`, q:`Berita bersifat aktual berarti …`,
+  o:[`peristiwa baru atau terkini`,`peristiwa lama`,`cerita fiksi`,`pendapat pribadi`], a:0},
+ {m:`Teks Berita`, q:`“Kebakaran terjadi akibat korsleting listrik.” Kutipan tersebut memuat unsur …`,
+  o:[`apa`,`siapa`,`mengapa`,`bagaimana`], a:2},
+ {m:`Teks Berita`, q:`Karakteristik bahasa teks berita adalah …`,
+  o:[`konotatif dan puitis`,`santai dan akrab`,`ambigu`,`baku, lugas, dan objektif`], a:3},
+ {m:`Vlog Berita`, q:`Vlog berita adalah …`,
+  o:[`video yang menyajikan informasi berita`,`podcast musik`,`iklan produk`,`film cerita`], a:0},
+ {m:`Teks Berita`, q:`Saat menemukan informasi viral yang belum terverifikasi, tindakan tepat adalah …`,
+  o:[`langsung menyebarkan`,`langsung percaya`,`memeriksa fakta dan menahan diri untuk tidak menyebar`,`membuat berita baru`], a:2},
+ {m:`Cerpen`, q:`“Pada tahun 1965, suasana kampung berubah tegang. Banyak orang takut keluar rumah.” Kutipan tersebut memiliki latar peristiwa sejarah …`,
+  o:[`pascaperistiwa 1965`,`penjajahan Jepang`,`proklamasi kemerdekaan`,`reformasi`], a:0},
+ {m:`Cerpen`, q:`“Setiap pagi Lina membantu ibunya berjualan di pasar. Ia tidak malu meski teman-temannya bermain. Ia percaya kerja keras adalah jalan mengubah nasib.” Tema kutipan tersebut adalah …`,
+  o:[`persahabatan`,`kerja keras dan tanggung jawab`,`percintaan`,`teknologi`], a:1},
+ {m:`Cerpen`, q:`“Rudi selalu berbagi bekal kepada teman yang tidak membawa makanan, meskipun ia sendiri sering lapar.” Watak Rudi adalah …`,
+  o:[`sombong`,`pelit`,`dermawan`,`penakut`], a:2},
+ {m:`Cerpen`, q:`Perbedaan cerpen dan novel adalah …`,
+  o:[`cerpen lebih singkat dan fokus pada satu konflik; novel lebih kompleks`,`cerpen selalu nonfiksi; novel selalu fiksi`,`cerpen tidak memiliki tokoh`,`novel tidak memiliki alur`], a:0},
+ {m:`Cerpen`, q:`“Tokoh awalnya takut berbicara di depan kelas. Setelah berlatih, ia berani menjadi pembicara.” Perkembangan karakter tokoh tersebut adalah …`,
+  o:[`statis`,`mundur`,`tetap`,`berkembang dari penakut menjadi berani`], a:3},
+ {m:`Cerpen`, q:`Puncak ketegangan dalam alur cerpen disebut …`,
+  o:[`orientasi`,`klimaks`,`resolusi`,`komplikasi`], a:1},
+ {m:`Cerpen`, q:`“Karena keserakannya, tokoh akhirnya kehilangan seluruh warisan.” Nasib akhir tokoh tersebut ditentukan oleh …`,
+  o:[`tindakan dan watak tokoh`,`latar tempat`,`tema cerita`,`amanat`], a:0},
+ {m:`Cerpen`, q:`“Tanah merah di depan rumah seperti menahan langkahku, sementara tiket kapal ke negeri seberang sudah kugenggam.” Pertentangan simbolik dalam kutipan cerpen <i>Tanah Air</i> tersebut adalah …`,
+  o:[`tanah merah = kemiskinan; tiket = kekayaan`,`tanah merah = ikatan tanah air; tiket = rencana pergi`,`tanah merah = kematian; tiket = kesuksesan`,`tanah merah = pekerjaan; tiket = sekolah`], a:1},
+ {m:`Cerpen`, q:`Pengarang cerpen “Mengapa Mereka Berdoa kepada Pohon” adalah …`,
+  o:[`Kuntowijoyo`,`Andrea Hirata`,`Tere Liye`,`Ahmad Tohari`], a:0},
+ {m:`Cerpen`, q:`Latar sejarah dan konflik politik dalam cerpen “Mengapa Mereka Berdoa kepada Pohon” berkaitan dengan …`,
+  o:[`masa penjajahan Belanda`,`revolusi fisik`,`konflik agraria abad ke-19`,`konflik politik pascaperistiwa 1965`], a:3},
+ {m:`Cerpen`, q:`Istilah yang tepat bagi orang yang hidup di luar negeri akibat pengasingan politik adalah …`,
+  o:[`ekspatriat`,`imigran`,`eksil`,`diaspora`], a:2},
+ {m:`Cerpen`, q:`Sebutan bagi orang yang hidup di luar negeri karena pengasingan politik adalah …`,
+  o:[`diaspora`,`ekspatriat`,`eksil`,`imigran`], a:2}
+];
+
+const LETTERS = ['A','B','C','D'];
+
+/* ================= STATE ================= */
+const state = {
+  order: [],
+  answers: {},     // key: index soal asli -> index opsi yang dipilih
+  current: 0,
+  benar: 0,
+  salah: 0
+};
+
+const $ = id => document.getElementById(id);
+const startScreen = $('startScreen'), quizScreen = $('quizScreen'), resultScreen = $('resultScreen');
+const qArea = $('qArea'), progressBar = $('progressBar');
+const liveBenar = $('liveBenar'), liveSalah = $('liveSalah');
+
+/* ================= MULAI ================= */
+$('startBtn').addEventListener('click', () => {
+  const idx = QUESTIONS.map((_, i) => i);
+  if ($('shuffleToggle').checked) {
+    for (let i = idx.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [idx[i], idx[j]] = [idx[j], idx[i]];
+    }
+  }
+  state.order = idx;
+  state.answers = {};
+  state.current = 0;
+  state.benar = 0;
+  state.salah = 0;
+  updateLive();
+
+  startScreen.classList.add('hidden');
+  resultScreen.classList.add('hidden');
+  quizScreen.classList.remove('hidden');
+  render();
+});
+
+/* ================= RENDER SOAL ================= */
+function render(){
+  const qi = state.order[state.current];
+  const q = QUESTIONS[qi];
+  const answered = state.answers[qi]; // index opsi atau undefined
+
+  const isAnswered = answered !== undefined;
+  const isCorrect = isAnswered && answered === q.a;
+
+  qArea.innerHTML = `
+    <div class="badge">${q.m}</div>
+    <div class="q-num">Soal ${state.current + 1} dari ${state.order.length}</div>
+    <div class="q-text">${q.q}</div>
+    ${q.o.map((opt, i) => {
+      let cls = 'opt';
+      let mark = '';
+      if (isAnswered) {
+        if (i === q.a) { cls += ' correct'; mark = '✓'; }
+        else if (i === answered) { cls += ' wrong'; mark = '✗'; }
+      }
+      return `<button class="${cls}" data-i="${i}" ${isAnswered ? 'disabled' : ''}>
+        <span class="letter">${LETTERS[i]}</span>
+        <span>${opt}</span>
+        ${mark ? `<span class="mark">${mark}</span>` : ''}
+      </button>`;
+    }).join('')}
+    ${isAnswered ? `
+      <div class="feedback ${isCorrect ? 'ok' : 'no'}">
+        <span class="icon">${isCorrect ? '✅' : '❌'}</span>
+        <div>
+          <b>${isCorrect ? 'Benar!' : 'Salah!'}</b>
+          ${isCorrect
+            ? `Jawaban kamu tepat.`
+            : `Jawaban yang benar adalah <b>${LETTERS[q.a]}. ${q.o[q.a]}</b>.`}
+        </div>
+      </div>
+      <div class="next-wrap">
+        ${state.current < state.order.length - 1
+          ? `<button class="btn btn-primary" id="nextQ">Soal Berikutnya →</button>`
+          : `<button class="btn btn-primary" id="showResult">Lihat Hasil Akhir →</button>`}
+      </div>
+    ` : ''}
+  `;
+
+  if (!isAnswered) {
+    qArea.querySelectorAll('.opt').forEach(btn => {
+      btn.addEventListener('click', () => pilih(Number(btn.dataset.i)));
+    });
+  } else {
+    const nextBtn = $('nextQ');
+    if (nextBtn) nextBtn.addEventListener('click', () => { state.current++; render(); });
+    const showRes = $('showResult');
+    if (showRes) showRes.addEventListener('click', () => finish());
+  }
+
+  updateProgress();
+}
+
+/* ================= PILIH JAWABAN → AUTO KOREK ================= */
+function pilih(i){
+  const qi = state.order[state.current];
+  if (state.answers[qi] !== undefined) return; // sudah dijawab
+
+  state.answers[qi] = i;
+
+  if (i === QUESTIONS[qi].a) state.benar++;
+  else state.salah++;
+  updateLive();
+
+  render(); // langsung tampilkan hasil korek
+}
+
+function updateLive(){
+  liveBenar.textContent = `✓ ${state.benar}`;
+  liveSalah.textContent = `✗ ${state.salah}`;
+}
+
+function updateProgress(){
+  const answered = Object.keys(state.answers).length;
+  progressBar.style.width = (answered / state.order.length * 100) + '%';
+}
+
+/* ================= SELESAI ================= */
+$('finishBtn').addEventListener('click', () => {
+  const sisa = state.order.length - Object.keys(state.answers).length;
+  const msg = sisa > 0
+    ? `Masih ada ${sisa} soal belum dijawab. Akhiri quiz sekarang?`
+    : 'Semua soal sudah dijawab. Lihat hasil akhir?';
+  if (confirm(msg)) finish();
+});
+
+function finish(){
+  const total = state.order.length;
+  const skor = Math.round(state.benar / total * 100);
+  const color = skor >= 75 ? '#22c55e' : skor >= 60 ? '#f59e0b' : '#ef4444';
+
+  const review = state.order.map((qi, i) => {
+    const q = QUESTIONS[qi];
+    const ans = state.answers[qi];
+    const ok = ans === q.a;
+    const cls = ans === undefined ? '' : (ok ? 'correct' : 'wrong');
+    const yourAns = ans === undefined
+      ? `<span class="bad">Tidak dijawab</span>`
+      : `<span class="${ok ? '' : 'bad'}">${LETTERS[ans]}. ${q.o[ans]}</span>`;
+    return `
+      <div class="rev-item ${cls}">
+        <div class="q">${i + 1}. ${q.q}</div>
+        <div class="ans">Jawabanmu: ${yourAns}<br>Kunci: <b>${LETTERS[q.a]}. ${q.o[q.a]}</b></div>
+        <div class="src">${q.m}</div>
+      </div>`;
+  }).join('');
+
+  quizScreen.classList.add('hidden');
+  resultScreen.classList.remove('hidden');
+  resultScreen.innerHTML = `
+    <div style="text-align:center">
+      <div class="score-ring" style="background:conic-gradient(${color} ${skor}%,#e2e8f0 0)">
+        <div class="score-inner"><b style="color:${color}">${skor}</b><span>NILAI</span></div>
+      </div>
+      <h2 style="color:#312e81;font-size:22px">Quiz Selesai!</h2>
+      <p style="color:#64748b;font-size:14px;margin-top:6px">
+        ${skor >= 75 ? 'Luar biasa! Pertahankan 🎉' : skor >= 60 ? 'Cukup baik, tingkatkan lagi 💪' : 'Jangan menyerah, pelajari kembali materinya 📚'}
+      </p>
+    </div>
+    <div class="stats">
+      <div class="stat ok"><b>${state.benar}</b><span>Benar</span></div>
+      <div class="stat no"><b>${state.salah}</b><span>Salah</span></div>
+      <div class="stat skip"><b>${total - state.benar - state.salah}</b><span>Kosong</span></div>
+    </div>
+    <div style="text-align:center">
+      <button class="btn btn-primary" id="restartBtn">Ulangi Quiz</button>
+    </div>
+    <div class="review-title">Rekap Jawaban</div>
+    ${review}
+  `;
+  resultScreen.scrollTop = 0;
+  $('restartBtn').addEventListener('click', () => {
+    resultScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+  });
+}
+</script>
+</body>
+</html>
